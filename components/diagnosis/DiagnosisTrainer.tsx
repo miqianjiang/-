@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import ChaoxingDigitalHuman from "@/components/ChaoxingDigitalHuman";
 import { diagnosisCase } from "@/lib/diagnosis/cases";
 
 type InspectKey = "setting" | "tester" | "sampling" | "wiring" | "enable";
@@ -265,6 +266,7 @@ export default function DiagnosisTrainer() {
           ) : null}
         </aside>
       </section>
+      <ChaoxingDigitalHuman />
     </main>
   );
 }

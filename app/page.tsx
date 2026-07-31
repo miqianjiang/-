@@ -5,9 +5,9 @@ const assistantUrl =
 
 const modules = [
   {
-    title: "AI助教入口",
+    title: "课程AI助教",
     tag: "功能1",
-    description: "跳转到超星AI助教，供学生进行课程问答与学习辅助。",
+    description: "跳转至课程AI助教，支持学生围绕线路保护知识进行问答学习。",
     href: assistantUrl,
     external: true,
     disabled: false
@@ -15,15 +15,15 @@ const modules = [
   {
     title: "图纸解读训练",
     tag: "功能2",
-    description: "加载案例图纸，框选端子、压板或局部回路，查看结构化解读。",
+    description: "基于典型保护图纸进行局部框选识读，辅助理解端子、压板和二次回路关系。",
     href: "/drawing",
     external: false,
     disabled: false
   },
   {
-    title: "故障诊断训练",
+    title: "故障诊断仿真",
     tag: "功能3",
-    description: "围绕零序过流保护Ⅲ段未动作案例，按标准流程逐步排查。",
+    description: "通过2D模拟试验台复现保护未动作场景，引导学生完成规范化排查。",
     href: "/diagnosis",
     external: false,
     disabled: false
@@ -37,17 +37,17 @@ export default function Home() {
         <div className="brand-mark">继保</div>
         <div>
           <p className="eyebrow">线路保护理实一体化实训平台</p>
-          <h1>学生训练工作台</h1>
+          <h1>线路保护智能训练平台</h1>
         </div>
-        <span className="version-badge">本地原型</span>
+        <span className="version-badge">教师测试版</span>
       </header>
 
       <section className="home-workbench">
         <div className="home-intro">
-          <span>请选择训练功能</span>
-          <h2>把图纸识读和故障诊断放在同一个学生端入口里。</h2>
+          <span>教师测试版本</span>
+          <h2>面向线路保护课程的智能化训练入口</h2>
           <p>
-            当前先跑通功能2和功能3。整体UI美化可以等流程稳定后再统一调整。
+            本版本用于预览课程AI助教、图纸解读训练和故障诊断仿真的整体流程，便于教师测试案例内容、交互逻辑和教学适配度。
           </p>
         </div>
 

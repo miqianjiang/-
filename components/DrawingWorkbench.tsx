@@ -2,6 +2,7 @@
 
 import { ChangeEvent, PointerEvent, useRef, useState } from "react";
 import Link from "next/link";
+import ChaoxingDigitalHuman from "@/components/ChaoxingDigitalHuman";
 import type { PDFDocumentProxy } from "pdfjs-dist";
 import { drawingCases } from "@/lib/drawing-cases";
 import type { DrawingAnalysis, Selection } from "@/lib/types";
@@ -543,6 +544,7 @@ export default function DrawingWorkbench() {
           本系统用于课程学习与仿真训练，AI 结果需由专业教师核验，不得作为真实继电保护操作依据。
         </span>
       </footer>
+      <ChaoxingDigitalHuman />
     </main>
   );
 }
