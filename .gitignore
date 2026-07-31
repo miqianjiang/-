@@ -1,0 +1,9 @@
+node_modules
+.next
+.env
+.env.local
+npm-debug.log*
+*.tsbuildinfo
+data/*.pdf
+data/*.docx
+.DS_Store
