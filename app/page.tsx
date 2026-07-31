@@ -1,11 +1,15 @@
 import Link from "next/link";
 
+const assistantUrl =
+  "https://robot.chaoxing.com/prime?unitId=1275&robotId=7b338884debd4d9996745d126772ee98";
+
 const modules = [
   {
     title: "AI助教入口",
     tag: "功能1",
-    description: "嵌入超星AI助教，供学生进行课程问答与学习辅助。",
-    href: "/assistant",
+    description: "跳转到超星AI助教，供学生进行课程问答与学习辅助。",
+    href: assistantUrl,
+    external: true,
     disabled: false
   },
   {
@@ -13,6 +17,7 @@ const modules = [
     tag: "功能2",
     description: "加载案例图纸，框选端子、压板或局部回路，查看结构化解读。",
     href: "/drawing",
+    external: false,
     disabled: false
   },
   {
@@ -20,6 +25,7 @@ const modules = [
     tag: "功能3",
     description: "围绕零序过流保护Ⅲ段未动作案例，按标准流程逐步排查。",
     href: "/diagnosis",
+    external: false,
     disabled: false
   }
 ];
@@ -54,6 +60,19 @@ export default function Home() {
                 <p>{module.description}</p>
                 <strong>待嵌入</strong>
               </div>
+            ) : module.external ? (
+              <a
+                className="module-card"
+                href={module.href}
+                key={module.title}
+                rel="noreferrer"
+                target="_blank"
+              >
+                <span>{module.tag}</span>
+                <h3>{module.title}</h3>
+                <p>{module.description}</p>
+                <strong>打开助教</strong>
+              </a>
             ) : (
               <Link className="module-card" href={module.href} key={module.title}>
                 <span>{module.tag}</span>

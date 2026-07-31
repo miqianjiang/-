@@ -223,26 +223,6 @@ a {
   font-size: 13px;
 }
 
-.assistant-shell {
-  height: 100vh;
-  overflow: hidden;
-}
-
-.assistant-frame-wrap {
-  height: calc(100vh - 84px);
-  padding: 14px;
-}
-
-.assistant-frame {
-  width: 100%;
-  height: 100%;
-  display: block;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  background: #fff;
-  box-shadow: var(--shadow);
-}
-
 .step-strip {
   height: 58px;
   display: flex;
