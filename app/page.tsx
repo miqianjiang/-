@@ -4,9 +4,9 @@ const modules = [
   {
     title: "AI助教入口",
     tag: "功能1",
-    description: "后续嵌入超星AI助教，当前先作为统一入口占位。",
-    href: "#",
-    disabled: true
+    description: "嵌入超星AI助教，供学生进行课程问答与学习辅助。",
+    href: "/assistant",
+    disabled: false
   },
   {
     title: "图纸解读训练",
