@@ -21,9 +21,9 @@ const modules = [
     disabled: false
   },
   {
-    title: "故障诊断仿真",
+    title: "保护逻辑动态推演",
     tag: "功能3",
-    description: "通过2D模拟试验台复现保护未动作场景，引导学生完成规范化排查。",
+    description: "将静态零序过流保护Ⅲ段动作逻辑图转化为可交互模型，实时观察投入、启动、延时、动作和复归过程。",
     href: "/diagnosis",
     external: false,
     disabled: false
@@ -47,7 +47,7 @@ export default function Home() {
           <span>教师测试版本</span>
           <h2>面向线路保护课程的智能化训练入口</h2>
           <p>
-            本版本用于预览课程AI助教、图纸解读训练和故障诊断仿真的整体流程，便于教师测试案例内容、交互逻辑和教学适配度。
+            本版本用于预览课程AI助教、图纸解读训练和保护逻辑推演训练的整体流程，便于教师测试案例内容、交互逻辑和教学适配度。
           </p>
         </div>
 
