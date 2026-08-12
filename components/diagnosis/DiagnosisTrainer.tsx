@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import type { ReactNode } from "react";
+import type { MouseEvent, ReactNode, WheelEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createInitialState, protectionCases } from "@/lib/protection-logic/cases";
 import {
@@ -262,14 +262,16 @@ export default function DiagnosisTrainer() {
               </div>
             </div>
             {isCaseAvailable ? (
-              <LogicDiagram
-                activeNode={activeNode}
-                elapsed={elapsed}
-                flowStage={flowStage}
-                experiment={experiment}
-                snapshot={snapshot}
-                onNodeFocus={setActiveNode}
-              />
+              <DiagramViewport>
+                <LogicDiagram
+                  activeNode={activeNode}
+                  elapsed={elapsed}
+                  flowStage={flowStage}
+                  experiment={experiment}
+                  snapshot={snapshot}
+                  onNodeFocus={setActiveNode}
+                />
+              </DiagramViewport>
             ) : (
               <CaseFlowPlaceholder protectionCase={selectedCase} />
             )}
@@ -305,6 +307,98 @@ export default function DiagnosisTrainer() {
         </aside>
       </section>
     </main>
+  );
+}
+
+function DiagramViewport({ children }: { children: ReactNode }) {
+  const viewportRef = useRef<HTMLDivElement | null>(null);
+  const [zoom, setZoom] = useState(1);
+  const dragState = useRef({
+    active: false,
+    left: 0,
+    top: 0,
+    x: 0,
+    y: 0
+  });
+
+  function handleMouseDown(event: MouseEvent<HTMLDivElement>) {
+    if (event.button !== 0) return;
+    const viewport = viewportRef.current;
+    if (!viewport) return;
+    dragState.current = {
+      active: true,
+      left: viewport.scrollLeft,
+      top: viewport.scrollTop,
+      x: event.clientX,
+      y: event.clientY
+    };
+    viewport.classList.add("dragging");
+  }
+
+  function handleMouseMove(event: MouseEvent<HTMLDivElement>) {
+    const viewport = viewportRef.current;
+    if (!viewport || !dragState.current.active) return;
+    viewport.scrollLeft = dragState.current.left - (event.clientX - dragState.current.x);
+    viewport.scrollTop = dragState.current.top - (event.clientY - dragState.current.y);
+  }
+
+  function stopDragging() {
+    dragState.current.active = false;
+    viewportRef.current?.classList.remove("dragging");
+  }
+
+  function updateZoom(nextZoom: number, origin?: { x: number; y: number }) {
+    const viewport = viewportRef.current;
+    const clampedZoom = Math.min(1.8, Math.max(0.75, Number(nextZoom.toFixed(2))));
+    if (!viewport) {
+      setZoom(clampedZoom);
+      return;
+    }
+
+    const rect = viewport.getBoundingClientRect();
+    const originX = origin ? origin.x - rect.left : viewport.clientWidth / 2;
+    const originY = origin ? origin.y - rect.top : viewport.clientHeight / 2;
+    const centerX = viewport.scrollLeft + originX;
+    const centerY = viewport.scrollTop + originY;
+    const ratio = clampedZoom / zoom;
+    setZoom(clampedZoom);
+
+    window.requestAnimationFrame(() => {
+      viewport.scrollLeft = centerX * ratio - originX;
+      viewport.scrollTop = centerY * ratio - originY;
+    });
+  }
+
+  function handleWheel(event: WheelEvent<HTMLDivElement>) {
+    event.preventDefault();
+    const step = event.deltaY > 0 ? -0.08 : 0.08;
+    updateZoom(zoom + step, { x: event.clientX, y: event.clientY });
+  }
+
+  return (
+    <div className="diagram-viewer">
+      <div className="diagram-tools" aria-label="图纸缩放控制">
+        <button type="button" onClick={() => updateZoom(zoom - 0.15)}>−</button>
+        <strong>{Math.round(zoom * 100)}%</strong>
+        <button type="button" onClick={() => updateZoom(zoom + 0.15)}>＋</button>
+        <button type="button" onClick={() => updateZoom(1)}>重置</button>
+      </div>
+      <div
+        className="diagram-viewport"
+        onMouseDown={handleMouseDown}
+        onMouseLeave={stopDragging}
+        onMouseMove={handleMouseMove}
+        onMouseUp={stopDragging}
+        onWheel={handleWheel}
+        ref={viewportRef}
+      >
+        <div className="diagram-stage" style={{ height: 560 * zoom + 28, width: 1320 * zoom + 28 }}>
+          <div className="diagram-scale-layer" style={{ transform: `scale(${zoom})` }}>
+            {children}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -469,7 +563,7 @@ function LogicDiagram({
   const delayProgress = Math.min(1, experiment.delaySetting > 0 ? elapsed / experiment.delaySetting : 0);
 
   return (
-    <svg className="logic-diagram original-style" viewBox="0 0 1320 560" role="img" aria-label="零序过流保护Ⅲ段动作逻辑图">
+    <svg className="logic-diagram original-style" preserveAspectRatio="xMidYMid meet" viewBox="0 0 1320 560" role="img" aria-label="零序过流保护Ⅲ段动作逻辑图">
       <defs>
         <marker id="arrowLogic" markerHeight="8" markerWidth="8" orient="auto" refX="7" refY="4">
           <path d="M0,0 L8,4 L0,8 Z" fill="currentColor" />

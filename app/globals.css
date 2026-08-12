@@ -1188,11 +1188,16 @@ a {
 
 .logic-trainer-shell {
   height: 100vh;
-  min-width: 1280px;
+  min-width: 1180px;
   overflow: hidden;
   display: grid;
   grid-template-rows: 72px minmax(0, 1fr);
   padding-bottom: 0;
+  font-family:
+    "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", Arial, sans-serif;
+  font-size: 14px;
+  text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
   background: #f3f6f8;
 }
 
@@ -1298,14 +1303,14 @@ a {
   min-height: 0;
   margin: 10px auto 12px;
   display: grid;
-  grid-template-columns: 300px minmax(720px, 1fr) 330px;
-  gap: 14px;
+  grid-template-columns: clamp(240px, 17vw, 300px) minmax(560px, 1fr) clamp(280px, 18vw, 330px);
+  gap: 12px;
   align-items: stretch;
 }
 
 .logic-control-panel,
 .logic-side-panel {
-  padding: 14px;
+  padding: 12px;
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -1588,10 +1593,90 @@ a {
   font-size: 17px;
 }
 
-.logic-diagram {
-  width: 100%;
-  min-width: 820px;
+.diagram-viewer {
+  position: relative;
   height: calc(100% - 58px);
+  min-height: 0;
+}
+
+.diagram-tools {
+  position: absolute;
+  z-index: 4;
+  right: 22px;
+  top: 12px;
+  height: 32px;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid #d7e3eb;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 8px 18px rgba(22, 44, 70, 0.08);
+}
+
+.diagram-tools button {
+  min-width: 28px;
+  height: 24px;
+  padding: 0 8px;
+  color: #1e4b67;
+  font-size: 12px;
+  font-weight: 750;
+  border: 1px solid #d6e2ea;
+  border-radius: 6px;
+  background: #fbfdfe;
+}
+
+.diagram-tools strong {
+  min-width: 44px;
+  color: #12384d;
+  font-size: 12px;
+  text-align: center;
+}
+
+.diagram-viewport {
+  height: 100%;
+  overflow: auto;
+  cursor: grab;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: #b9c8d3 #eef3f6;
+}
+
+.diagram-viewport.dragging {
+  cursor: grabbing;
+  user-select: none;
+}
+
+.diagram-viewport::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.diagram-viewport::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: #b9c8d3;
+}
+
+.diagram-viewport::-webkit-scrollbar-track {
+  background: #eef3f6;
+}
+
+.diagram-stage {
+  position: relative;
+  padding: 14px;
+}
+
+.diagram-scale-layer {
+  width: 1320px;
+  height: 560px;
+  transform-origin: top left;
+}
+
+.logic-diagram {
+  width: 1320px;
+  min-width: 0;
+  height: 560px;
   margin: 0 auto;
   display: block;
   background:
@@ -1603,10 +1688,10 @@ a {
 }
 
 .logic-diagram.original-style {
-  width: calc(100% - 28px);
-  min-width: 900px;
-  height: calc(100% - 86px);
-  margin: 14px;
+  width: 1320px;
+  min-width: 0;
+  height: 560px;
+  margin: 0;
   border: 1px solid #e2ebf0;
   border-radius: 8px;
   background:
@@ -1759,8 +1844,9 @@ a {
 
 .original-style .svg-node text {
   fill: #2d2d2d;
-  font-size: 17px;
-  font-weight: 500;
+  font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", Arial, sans-serif;
+  font-size: 16px;
+  font-weight: 600;
 }
 
 .svg-node text:nth-of-type(2) {
@@ -1770,18 +1856,18 @@ a {
 
 .original-style .svg-node text:nth-of-type(2) {
   fill: #2d2d2d;
-  font-size: 17px;
+  font-size: 16px;
 }
 
 .original-style .formula-node .formula-text {
   fill: #263238;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
 }
 
 .original-style .formula-node .formula-value {
   fill: #657684;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
 }
 
@@ -1863,7 +1949,7 @@ a {
 }
 
 .original-style .svg-node.gate text {
-  font-size: 34px;
+  font-size: 32px;
   font-weight: 500;
 }
 
@@ -1944,7 +2030,8 @@ a {
 
 .logic-value-label text {
   fill: #60686d;
-  font-size: 15px;
+  font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", Arial, sans-serif;
+  font-size: 14px;
   font-weight: 650;
 }
 
@@ -1972,6 +2059,66 @@ a {
   border: 1px solid #d7e3eb;
   border-radius: 8px;
   background: #fbfdfe;
+}
+
+@media (max-height: 760px) {
+  .logic-trainer-shell {
+    grid-template-rows: 64px minmax(0, 1fr);
+  }
+
+  .logic-trainer-shell .topbar {
+    min-height: 64px;
+  }
+
+  .logic-trainer-shell .topbar h1 {
+    font-size: 20px;
+  }
+
+  .logic-main-column {
+    grid-template-rows: minmax(0, 1fr) 112px;
+    gap: 8px;
+  }
+
+  .logic-panel-head {
+    min-height: 50px;
+    padding: 7px 12px;
+  }
+
+  .diagram-viewer {
+    height: calc(100% - 50px);
+  }
+
+  .diagram-stage {
+    padding: 10px;
+  }
+
+  .logic-control-panel,
+  .logic-side-panel {
+    padding: 10px;
+  }
+
+  .logic-bottom-panel.compact {
+    grid-template-rows: 32px minmax(0, 1fr);
+  }
+
+  .bottom-tabs button {
+    height: 27px;
+  }
+}
+
+@media (max-width: 1440px) {
+  .logic-workspace {
+    grid-template-columns: 250px minmax(520px, 1fr) 290px;
+    gap: 10px;
+  }
+
+  .preset-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .logic-side-panel .state-grid {
+    gap: 6px;
+  }
 }
 
 .logic-bottom-panel .node-inspector {
