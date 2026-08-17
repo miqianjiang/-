@@ -1,6 +1,7 @@
 import type { ExperimentState, FaultCase, ProtectionCase, ScenarioPreset } from "./types";
 
 export const defaultExperimentState: ExperimentState = {
+  logicType: "zeroSequenceStageThree",
   zeroSequenceHardPlate: true,
   zeroSequenceSoftPlate: true,
   stageThreeControlWord: true,
@@ -13,7 +14,33 @@ export const defaultExperimentState: ExperimentState = {
   maintenancePlate: true,
   tripOutletPlate: false,
   closeOutletPlate: false,
-  testerOutputRunning: false
+  testerOutputRunning: false,
+  distanceHardPlate: true,
+  distanceSoftPlate: true,
+  distanceStageTwoControlWord: true,
+  voltageCircuitCorrect: true,
+  preFaultStateCorrect: true,
+  impedanceFaultSettingCorrect: true,
+  tvResetDone: true,
+  impedanceValue: 3.5,
+  impedanceSetting: 5,
+  reclosingHardPlate: true,
+  reclosingSoftPlate: true,
+  reclosingStopControlOff: true,
+  reclosingBanControlOff: true,
+  noExternalBlockSignal: true,
+  protectionNotStarted: true,
+  breakerClosed: true,
+  chargeDelaySetting: 15,
+  overcurrentHardPlate: true,
+  overcurrentSoftPlate: true,
+  overcurrentDirectionSatisfied: true,
+  overcurrentVoltageSatisfied: true,
+  overcurrentDirectionalControl: true,
+  overcurrentLowVoltageBlockControl: true,
+  ptTripReturned: true,
+  phaseCurrent: 5,
+  phaseCurrentSetting: 4
 };
 
 export const zeroSequenceStageThreePresets: ScenarioPreset[] = [
@@ -49,6 +76,117 @@ export const zeroSequenceStageThreePresets: ScenarioPreset[] = [
   }
 ];
 
+export const distanceStageTwoPresets: ScenarioPreset[] = [
+  {
+    id: "distance-normal-action",
+    label: "正常动作",
+    description: "投入、复归、阻抗判据和延时均满足。",
+    patch: {}
+  },
+  {
+    id: "distance-soft-plate-out",
+    label: "软压板退出",
+    description: "接地距离保护投入支路中断。",
+    patch: { distanceSoftPlate: false }
+  },
+  {
+    id: "distance-impedance-high",
+    label: "阻抗偏大",
+    description: "Z 未小于 ZsetⅡ，距离II段不启动。",
+    patch: { impedanceValue: 6 }
+  },
+  {
+    id: "distance-tv-not-reset",
+    label: "TV未复归",
+    description: "TV断线复归未完成，启动支路不成立。",
+    patch: { tvResetDone: false }
+  }
+];
+
+export const reclosingChargePresets: ScenarioPreset[] = [
+  {
+    id: "charge-success",
+    label: "充电成功",
+    description: "重合闸投入、无闭锁、开关合位，15s后充电成功。",
+    patch: { testerDuration: 18 }
+  },
+  {
+    id: "charge-protection-started",
+    label: "保护启动",
+    description: "保护启动时重合闸充电条件被打断。",
+    patch: { protectionNotStarted: false, testerDuration: 18 }
+  },
+  {
+    id: "charge-breaker-open",
+    label: "断路器未合",
+    description: "断路器合位条件不满足。",
+    patch: { breakerClosed: false, testerDuration: 18 }
+  },
+  {
+    id: "charge-blocked",
+    label: "外部闭锁",
+    description: "存在外部闭锁重合闸信号。",
+    patch: { noExternalBlockSignal: false, testerDuration: 18 }
+  }
+];
+
+export const overcurrentStageOnePresets: ScenarioPreset[] = [
+  {
+    id: "overcurrent-normal-action",
+    label: "正常动作",
+    description: "投入、方向/低压闭锁、电流判据和延时均满足。",
+    patch: {}
+  },
+  {
+    id: "overcurrent-current-low",
+    label: "电流不足",
+    description: "I 未大于 Iset，过流I段不启动。",
+    patch: { phaseCurrent: 3.5 }
+  },
+  {
+    id: "overcurrent-direction-bad",
+    label: "方向不满足",
+    description: "方向控制投入时故障量方向不满足。",
+    patch: { overcurrentDirectionSatisfied: false }
+  },
+  {
+    id: "overcurrent-pt-not-reset",
+    label: "PT未复归",
+    description: "PT断线退出未完成，闭锁启动支路。",
+    patch: { ptTripReturned: false }
+  }
+];
+
+const distanceStageTwoDefaultState: ExperimentState = {
+  ...defaultExperimentState,
+  logicType: "distanceStageTwo",
+  currentSetting: 5,
+  testerCurrent: 3.5,
+  delaySetting: 1.5,
+  testerDuration: 2,
+  impedanceValue: 3.5,
+  impedanceSetting: 5
+};
+
+const reclosingChargeDefaultState: ExperimentState = {
+  ...defaultExperimentState,
+  logicType: "reclosingCharge",
+  delaySetting: 15,
+  chargeDelaySetting: 15,
+  testerDuration: 18
+};
+
+const overcurrentStageOneDefaultState: ExperimentState = {
+  ...defaultExperimentState,
+  logicType: "overcurrentStageOne",
+  currentSetting: 4,
+  testerCurrent: 5,
+  phaseCurrent: 5,
+  phaseCurrentSetting: 4,
+  delaySetting: 0.5,
+  testerDuration: 1
+};
+
 export const protectionCases: ProtectionCase[] = [
   {
     id: "zero-sequence-stage-three",
@@ -66,37 +204,49 @@ export const protectionCases: ProtectionCase[] = [
     ]
   },
   {
-    id: "distance-stage-one",
-    title: "距离保护Ⅰ段动作逻辑",
-    shortTitle: "距离Ⅰ段",
-    description: "预留给后续老师提供距离保护Ⅰ段静态逻辑图后接入。",
-    logicType: "reserved",
-    status: "reserved",
-    defaultState: defaultExperimentState,
-    presets: [],
-    notes: ["该逻辑案例待接入。接入后将展示距离Ⅰ段自己的流程图、输入条件和动作规则。"]
+    id: "distance-stage-two",
+    title: "接地距离保护Ⅱ段动作逻辑",
+    shortTitle: "距离Ⅱ段",
+    description:
+      "距离保护硬压板、接地距离软压板和Ⅱ段控制字决定投入；电流回路、阻抗故障量、TV断线复归支路和阻抗判据决定启动；投入与启动共同进入延时动作。",
+    logicType: "distanceStageTwo",
+    status: "available",
+    defaultState: distanceStageTwoDefaultState,
+    presets: distanceStageTwoPresets,
+    notes: [
+      "已按老师提供的距离II段逻辑图接入独立推演。",
+      "重点观察 Z < ZsetⅡ、TV断线复归支路和接地距离II段投入对最终动作的影响。"
+    ]
   },
   {
     id: "reclosing-logic",
-    title: "重合闸逻辑",
+    title: "重合闸充电逻辑",
     shortTitle: "重合闸",
-    description: "预留给后续重合闸条件、闭锁条件和延时逻辑接入。",
-    logicType: "reserved",
-    status: "reserved",
-    defaultState: defaultExperimentState,
-    presets: [],
-    notes: ["该逻辑案例待接入。接入后将展示重合闸自己的流程图、闭锁条件和延时规则。"]
+    description:
+      "重合闸硬压板、软压板、停用/禁用控制字和外部闭锁共同决定充电允许；保护未启动与断路器合位共同确认运行条件，满足后经15s完成充电。",
+    logicType: "reclosingCharge",
+    status: "available",
+    defaultState: reclosingChargeDefaultState,
+    presets: reclosingChargePresets,
+    notes: [
+      "已按老师提供的重合闸充电逻辑图接入独立推演。",
+      "对应现象：充电完成信号灯常亮；闪烁表示正在充电，不亮表示放电。"
+    ]
   },
   {
-    id: "over-current-stage-two",
-    title: "过流保护Ⅱ段动作逻辑",
-    shortTitle: "过流Ⅱ段",
-    description: "预留给后续过流保护Ⅱ段逻辑图和定值比较关系接入。",
-    logicType: "reserved",
-    status: "reserved",
-    defaultState: defaultExperimentState,
-    presets: [],
-    notes: ["该逻辑案例待接入。接入后将展示过流Ⅱ段自己的流程图、定值比较和动作规则。"]
+    id: "over-current-stage-one",
+    title: "过流保护Ⅰ段动作逻辑",
+    shortTitle: "过流Ⅰ段",
+    description:
+      "过流I段硬压板、软压板决定投入；电流回路、方向/低压闭锁条件、PT断线退出支路和电流判据共同决定启动；投入与启动共同进入I段延时动作。",
+    logicType: "overcurrentStageOne",
+    status: "available",
+    defaultState: overcurrentStageOneDefaultState,
+    presets: overcurrentStageOnePresets,
+    notes: [
+      "已按老师提供的过流I段逻辑图接入独立推演。",
+      "重点观察 I > Iset、方向控制字、低压闭锁控制字和PT断线退出支路对启动支路的影响。"
+    ]
   }
 ];
 

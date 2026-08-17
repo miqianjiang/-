@@ -1,6 +1,12 @@
 export type CurrentCircuitState = "normal" | "open" | "wrongTerminal";
+export type ProtectionLogicType =
+  | "zeroSequenceStageThree"
+  | "distanceStageTwo"
+  | "reclosingCharge"
+  | "overcurrentStageOne";
 
 export type ExperimentState = {
+  logicType: ProtectionLogicType;
   zeroSequenceHardPlate: boolean;
   zeroSequenceSoftPlate: boolean;
   stageThreeControlWord: boolean;
@@ -14,6 +20,32 @@ export type ExperimentState = {
   tripOutletPlate: boolean;
   closeOutletPlate: boolean;
   testerOutputRunning: boolean;
+  distanceHardPlate: boolean;
+  distanceSoftPlate: boolean;
+  distanceStageTwoControlWord: boolean;
+  voltageCircuitCorrect: boolean;
+  preFaultStateCorrect: boolean;
+  impedanceFaultSettingCorrect: boolean;
+  tvResetDone: boolean;
+  impedanceValue: number;
+  impedanceSetting: number;
+  reclosingHardPlate: boolean;
+  reclosingSoftPlate: boolean;
+  reclosingStopControlOff: boolean;
+  reclosingBanControlOff: boolean;
+  noExternalBlockSignal: boolean;
+  protectionNotStarted: boolean;
+  breakerClosed: boolean;
+  chargeDelaySetting: number;
+  overcurrentHardPlate: boolean;
+  overcurrentSoftPlate: boolean;
+  overcurrentDirectionSatisfied: boolean;
+  overcurrentVoltageSatisfied: boolean;
+  overcurrentDirectionalControl: boolean;
+  overcurrentLowVoltageBlockControl: boolean;
+  ptTripReturned: boolean;
+  phaseCurrent: number;
+  phaseCurrentSetting: number;
 };
 
 export type LogicNodeState = {
@@ -81,8 +113,8 @@ export type ProtectionCase = {
   title: string;
   shortTitle: string;
   description: string;
-  logicType: "zeroSequenceStageThree" | "reserved";
-  status: "available" | "reserved";
+  logicType: ProtectionLogicType;
+  status: "available";
   defaultState: ExperimentState;
   presets: ScenarioPreset[];
   notes: string[];
