@@ -404,11 +404,6 @@ function getNodeLearningMaterial(
       caption: "现场硬压板 1KLP5：零序过流保护投入",
       src: "/diagnosis/zero-sequence/hard-plate.png"
     },
-    hardLocation: {
-      alt: "零序过流保护硬压板图纸位置",
-      caption: "图纸中硬压板端子位置与编号标注",
-      src: "/diagnosis/zero-sequence/hard-plate-location.png"
-    },
     soft: {
       alt: "零序过流保护软压板设置照片",
       caption: "装置功能压板：零序过流保护软压板=1-投入",
@@ -418,6 +413,11 @@ function getNodeLearningMaterial(
       alt: "零序电流保护控制字设置照片",
       caption: "保护定值控制字：零序电流保护=1-投入",
       src: "/diagnosis/zero-sequence/control-word.png"
+    },
+    circuit: {
+      alt: "电流回路接线示意图",
+      caption: "测试仪电流输出与保护装置采样回路接线对应关系",
+      src: "/diagnosis/zero-sequence/current-circuit-wiring.png"
     }
   } satisfies Record<string, NodeLearningImage>;
 
@@ -428,7 +428,7 @@ function getNodeLearningMaterial(
       value: experiment.zeroSequenceHardPlate,
       statusText: boolStatus(experiment.zeroSequenceHardPlate, "已投入，输出 1", "未投入，输出 0"),
       summary: "硬压板是保护出口前的现场物理投入条件。只有硬压板处于投入位置，零序Ⅲ段投入支路才允许继续向后传递。",
-      images: [sharedImages.hard, sharedImages.hardLocation],
+      images: [sharedImages.hard],
       steps: [
         "在屏柜上找到 1KLP5“零序过流保护投入”硬压板。",
         "确认压板已可靠投入，避免只在装置菜单投入而现场出口被切断。",
@@ -502,7 +502,7 @@ function getNodeLearningMaterial(
       value: snapshot.currentCircuitCorrect,
       statusText: boolStatus(snapshot.currentCircuitCorrect, "接线正确，输出 1", "接线异常，输出 0"),
       summary: "该节点用于确认测试仪输出电流能够正确进入保护装置采样回路。接线异常时，即使电流数值设置满足，启动链路也不能成立。",
-      images: [],
+      images: [sharedImages.circuit],
       steps: [
         "确认测试仪电流输出端子与保护装置电流输入端子对应。",
         "检查极性、相别和零序电流接线是否正确。",
@@ -1689,22 +1689,17 @@ function NodeLearningModal({
           <p>{material.statusText}</p>
         </div>
 
-        <div className="node-learning-body">
-          <div className="node-learning-media">
-            {material.images.length ? (
-              material.images.map((image) => (
+        <div className={`node-learning-body ${material.images.length ? "with-media" : "text-only"}`}>
+          {material.images.length ? (
+            <div className="node-learning-media">
+              {material.images.map((image) => (
                 <figure key={image.src}>
                   <img alt={image.alt} src={image.src} />
                   <figcaption>{image.caption}</figcaption>
                 </figure>
-              ))
-            ) : (
-              <div className="node-learning-empty">
-                <strong>该节点暂无现场照片</strong>
-                <p>当前先展示实时判定和解说，后续老师补充素材后可直接绑定到这个节点。</p>
-              </div>
-            )}
-          </div>
+              ))}
+            </div>
+          ) : null}
 
           <div className="node-learning-copy">
             {material.textbook ? (

@@ -2756,7 +2756,6 @@ a {
   min-height: 0;
   padding: 16px;
   display: grid;
-  grid-template-columns: minmax(420px, 1.28fr) minmax(320px, 0.72fr);
   gap: 16px;
   overflow: auto;
   background:
@@ -2764,6 +2763,15 @@ a {
     linear-gradient(90deg, rgba(41, 75, 105, 0.035) 1px, transparent 1px),
     #f6f9fb;
   background-size: 24px 24px;
+}
+
+.node-learning-body.with-media {
+  grid-template-columns: minmax(420px, 1.22fr) minmax(340px, 0.78fr);
+}
+
+.node-learning-body.text-only {
+  grid-template-columns: 1fr;
+  align-content: start;
 }
 
 .node-learning-media {
@@ -2799,35 +2807,19 @@ a {
   background: #fbfdfe;
 }
 
-.node-learning-empty {
-  min-height: 260px;
-  padding: 22px;
-  display: grid;
-  place-content: center;
-  text-align: center;
-  border: 1px dashed #b8d4df;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.78);
-}
-
-.node-learning-empty strong {
-  color: #173c54;
-  font-size: 15px;
-}
-
-.node-learning-empty p {
-  max-width: 360px;
-  margin: 8px auto 0;
-  color: #526b7d;
-  font-size: 13px;
-  line-height: 1.65;
-}
-
 .node-learning-copy {
   min-width: 0;
   display: grid;
   gap: 12px;
   align-content: start;
+}
+
+.node-learning-body.text-only .node-learning-copy {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.node-learning-body.text-only .node-learning-textbook {
+  grid-column: 1 / -1;
 }
 
 .node-learning-copy section {
@@ -2903,6 +2895,10 @@ a {
 
 @media (max-width: 1180px) {
   .node-learning-body {
+    grid-template-columns: 1fr;
+  }
+
+  .node-learning-body.text-only .node-learning-copy {
     grid-template-columns: 1fr;
   }
 }
