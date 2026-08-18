@@ -21,9 +21,9 @@ const modules = [
     disabled: false
   },
   {
-    title: "保护逻辑动态推演",
+    title: "故障排查智能引导",
     tag: "功能3",
-    description: "将静态零序过流保护Ⅲ段动作逻辑图转化为可交互模型，实时观察投入、启动、延时、动作和复归过程。",
+    description: "根据故障现象、保护名称或判据自动匹配典型案例，引导学生进入对应保护逻辑的排查过程。",
     href: "/diagnosis",
     external: false,
     disabled: false
@@ -47,7 +47,7 @@ export default function Home() {
           <span>教师测试版本</span>
           <h2>面向线路保护课程的智能化训练入口</h2>
           <p>
-            本版本用于预览课程AI助教、图纸解读训练和保护逻辑推演训练的整体流程，便于教师测试案例内容、交互逻辑和教学适配度。
+            本版本用于预览课程AI助教、图纸解读训练和故障排查智能引导的整体流程，便于教师测试案例内容、交互逻辑和教学适配度。
           </p>
         </div>
 

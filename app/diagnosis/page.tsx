@@ -1,5 +1,5 @@
-import DiagnosisTrainer from "@/components/diagnosis/DiagnosisTrainer";
+import DiagnosisEntry from "@/components/diagnosis/DiagnosisEntry";
 
 export default function DiagnosisPage() {
-  return <DiagnosisTrainer />;
+  return <DiagnosisEntry />;
 }

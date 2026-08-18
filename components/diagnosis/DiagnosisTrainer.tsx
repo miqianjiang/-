@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import type { MouseEvent, ReactNode, WheelEvent } from "react";
+import type { ChangeEvent, MouseEvent, ReactNode, WheelEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createInitialState, protectionCases } from "@/lib/protection-logic/cases";
 import {
@@ -36,10 +36,19 @@ type NodeLearningMaterial = {
   subtitle: string;
   value: boolean;
   statusText: string;
+  textbook?: {
+    source: string;
+    text: string;
+  };
   summary: string;
   images: NodeLearningImage[];
   steps: string[];
   currentBasis: string;
+};
+
+type ManualInterpretationState = {
+  fileName: string;
+  status: "idle" | "analyzing" | "ready";
 };
 
 function nowLabel() {
@@ -69,26 +78,31 @@ function stageReached(current: FlowStage, target: FlowStage) {
   return order.indexOf(current) >= order.indexOf(target);
 }
 
-export default function DiagnosisTrainer() {
-  const [selectedCaseId, setSelectedCaseId] = useState("zero-sequence-stage-three");
-  const [experiment, setExperiment] = useState<ExperimentState>(() => createInitialState());
+export default function DiagnosisTrainer({ initialCaseId = "zero-sequence-stage-three" }: { initialCaseId?: string }) {
+  const initialCase =
+    protectionCases.find((item) => item.id === initialCaseId) ?? protectionCases[0];
+  const [experiment, setExperiment] = useState<ExperimentState>(() => createInitialState(initialCase.id));
   const [elapsed, setElapsed] = useState(0);
   const [bottomTab, setBottomTab] = useState<"node" | "log">("node");
   const [learningNode, setLearningNode] = useState<string | null>(null);
+  const [manualInterpretation, setManualInterpretation] = useState<ManualInterpretationState>({
+    fileName: "",
+    status: "idle"
+  });
   const [records, setRecords] = useState<OperationRecord[]>(() => [
     {
       id: "initial",
       time: nowLabel(),
       action: "进入实验",
-      result: "加载零序过流保护Ⅲ段动作逻辑图。"
+      result: `加载${initialCase.shortTitle}动态逻辑图。`
     }
   ]);
   const [activeNode, setActiveNode] = useState<string>("stageAction");
   const lastSnapshot = useRef<LogicSnapshot | null>(null);
+  const manualUploadVersion = useRef(0);
   const wasPermitted = useRef(false);
 
-  const selectedCase =
-    protectionCases.find((item) => item.id === selectedCaseId) ?? protectionCases[0];
+  const selectedCase = initialCase;
   const isCaseAvailable = selectedCase.status === "available";
   const snapshot = useMemo(() => calculateProtectionLogic(experiment, elapsed), [elapsed, experiment]);
   const learningMaterial = useMemo(
@@ -200,17 +214,6 @@ export default function DiagnosisTrainer() {
     addRecord("载入典型场景", "场景", undefined, preset.label, preset.description);
   }
 
-  function selectCase(nextCase: ProtectionCase) {
-    setSelectedCaseId(nextCase.id);
-    setElapsed(0);
-    setLearningNode(null);
-    wasPermitted.current = false;
-    lastSnapshot.current = null;
-    setActiveNode("stageAction");
-    setExperiment(createInitialState(nextCase.id));
-    addRecord("选择逻辑案例", "案例", selectedCase.title, nextCase.title, "已载入该逻辑案例的默认推演条件。");
-  }
-
   function startExperiment() {
     if (!isCaseAvailable) return;
     setElapsed(0);
@@ -233,9 +236,26 @@ export default function DiagnosisTrainer() {
     setExperiment(isCaseAvailable ? createInitialState(selectedCase.id) : { ...createInitialState(), testerOutputRunning: false });
     setElapsed(0);
     setLearningNode(null);
+    manualUploadVersion.current += 1;
+    setManualInterpretation({ fileName: "", status: "idle" });
     wasPermitted.current = false;
     lastSnapshot.current = null;
-    addRecord("复位", "实验状态", undefined, undefined, "已恢复当前模式默认参数。");
+    addRecord("复位", "实验状态", undefined, undefined, "已恢复当前模式默认参数，并清空说明书解读结果。");
+  }
+
+  function handleManualUpload(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const uploadVersion = manualUploadVersion.current + 1;
+    manualUploadVersion.current = uploadVersion;
+    setManualInterpretation({ fileName: file.name, status: "analyzing" });
+    addRecord("上传说明书", "AI解读", undefined, file.name, "正在按案例一模板识别保护说明书关键依据。");
+    window.setTimeout(() => {
+      if (manualUploadVersion.current !== uploadVersion) return;
+      setManualInterpretation({ fileName: file.name, status: "ready" });
+      addRecord("完成说明书解读", "AI解读", "解读中", "已完成", "已提取零序过流保护Ⅲ段的说明书页码、投入条件、启动条件和动作说明。");
+    }, 900);
+    event.target.value = "";
   }
 
   function focusNode(nodeId: string) {
@@ -250,19 +270,22 @@ export default function DiagnosisTrainer() {
       <header className="topbar">
         <div className="brand-mark">继保</div>
         <div>
-          <p className="eyebrow">将静态继电保护逻辑图转化为可交互的动态逻辑模型</p>
-          <h1>保护逻辑动态推演</h1>
+          <p className="eyebrow">根据故障现象定位保护逻辑节点并完成排查验证</p>
+          <h1>故障排查智能引导</h1>
+          <span className="logic-case-pill">{selectedCase.shortTitle}</span>
         </div>
         <div className="logic-top-status">
           <span>当前状态</span>
           <strong>{protectionStatus}</strong>
         </div>
-        <button className="topbar-link" type="button" onClick={resetAll}>
-          复位
-        </button>
-        <Link className="topbar-link" href="/">
-          返回功能入口
-        </Link>
+        <div className="logic-top-actions">
+          <button className="topbar-link" type="button" onClick={resetAll}>
+            复位
+          </button>
+          <Link className="topbar-link" href="/diagnosis">
+            返回排查入口
+          </Link>
+        </div>
       </header>
 
       <section className="logic-workspace">
@@ -339,13 +362,14 @@ export default function DiagnosisTrainer() {
         </div>
 
         <aside className="logic-side-panel">
-          <CaseLibrary
-            activeCaseId={selectedCaseId}
-            cases={protectionCases}
-            onSelect={selectCase}
-          />
           {isCaseAvailable ? (
             <>
+              <ManualInterpretationPanel
+                experiment={experiment}
+                interpretation={manualInterpretation}
+                onUpload={handleManualUpload}
+                snapshot={snapshot}
+              />
               <StatusAnalysis snapshot={snapshot} experiment={experiment} elapsed={elapsed} />
               <LogicExplanation snapshot={snapshot} experiment={experiment} />
             </>
@@ -459,6 +483,10 @@ function getNodeLearningMaterial(
       subtitle: "投入支路输出",
       value: snapshot.stageEnabled,
       statusText: boolStatus(snapshot.stageEnabled),
+      textbook: {
+        source: "装置说明书 P23",
+        text: "本装置设有零序Ⅱ段和零序Ⅲ段两段定时限保护；两段定时限功能均受对应保护软压板和零序保护控制字控制。"
+      },
       summary: "该节点表示零序过流保护Ⅲ段已经具备投入条件，是后续最终动作允许的上支路输入。",
       images: [sharedImages.hard, sharedImages.soft, sharedImages.control],
       steps: [
@@ -529,6 +557,10 @@ function getNodeLearningMaterial(
       subtitle: "启动支路输出",
       value: snapshot.stageStarted,
       statusText: boolStatus(snapshot.stageStarted),
+      textbook: {
+        source: "装置说明书 P23",
+        text: "零序Ⅱ段保护固定带方向，零序Ⅲ段可通过控制字选择是否带方向；发生 PT 断线后，零序Ⅲ段保护自动退出，或按控制选择自动不带方向。"
+      },
       summary: "启动节点输出 1 后，表示零序Ⅲ段已经满足启动条件，等待与投入支路共同形成最终动作允许。",
       images: [],
       steps: [
@@ -557,6 +589,10 @@ function getNodeLearningMaterial(
       subtitle: "动作时间定值累计",
       value: snapshot.nodes.delay.value,
       statusText: boolStatus(snapshot.nodes.delay.value, "延时完成，输出 1", "延时未完成，输出 0"),
+      textbook: {
+        source: "装置说明书 P24",
+        text: "非全相运行期间零序Ⅲ段动作时间比整定时间缩短 0.5s；若整定值小于 0.5s，则动作时间按整定值执行。"
+      },
       summary: "当最终动作允许为 1 后，保护开始累计动作延时。累计时间达到 tⅢ0.set 后，延时节点输出 1。",
       images: [],
       steps: [
@@ -571,6 +607,10 @@ function getNodeLearningMaterial(
       subtitle: "最终动作输出",
       value: snapshot.stageAction,
       statusText: boolStatus(snapshot.stageAction, "已动作，输出 1", "未动作，输出 0"),
+      textbook: {
+        source: "装置说明书 P24",
+        text: "零序Ⅲ段动作后三跳并闭锁重合闸；是否闭锁重合闸由“Ⅱ段保护闭锁重合闸”控制字选择。"
+      },
       summary: "最终动作节点表示零序过流保护Ⅲ段动作结果。只有投入、启动和延时均满足后，该节点才输出 1。",
       images: [],
       steps: [
@@ -1667,6 +1707,15 @@ function NodeLearningModal({
           </div>
 
           <div className="node-learning-copy">
+            {material.textbook ? (
+              <section className="node-learning-textbook">
+                <div>
+                  <span>说明书原文定位</span>
+                  <strong>{material.textbook.source}</strong>
+                </div>
+                <p>{material.textbook.text}</p>
+              </section>
+            ) : null}
             <section>
               <h3>节点解说</h3>
               <p>{material.summary}</p>
@@ -1687,6 +1736,66 @@ function NodeLearningModal({
         </div>
       </section>
     </div>
+  );
+}
+
+function ManualInterpretationPanel({
+  experiment,
+  interpretation,
+  onUpload,
+  snapshot
+}: {
+  experiment: ExperimentState;
+  interpretation: ManualInterpretationState;
+  onUpload: (event: ChangeEvent<HTMLInputElement>) => void;
+  snapshot: LogicSnapshot;
+}) {
+  const isZeroSequence = experiment.logicType === "zeroSequenceStageThree";
+  const ready = interpretation.status === "ready" && isZeroSequence;
+  const analyzing = interpretation.status === "analyzing";
+  const statusText = analyzing ? "AI解读中" : ready ? "已解读" : "待上传";
+
+  return (
+    <section className="side-card manual-interpretation-card">
+      <div className="side-card-head">
+        <span>说明书解读</span>
+        <strong>{statusText}</strong>
+      </div>
+      <label className="manual-upload-drop">
+        <input accept=".pdf,.doc,.docx" type="file" onChange={onUpload} />
+        <span>{interpretation.fileName || "上传保护装置说明书"}</span>
+        <strong>{analyzing ? "解读中..." : "选择文件"}</strong>
+      </label>
+
+      {ready ? (
+        <div className="manual-ai-result">
+          <div className="manual-source">
+            <span>识别模板</span>
+            <strong>PSL-603U 系列线路保护装置说明书 V3.30G</strong>
+          </div>
+          <div className="manual-source">
+            <span>保护对象</span>
+            <strong>零序过流保护Ⅲ段</strong>
+          </div>
+          <div className="manual-pages">
+            <p><strong>P23</strong> 零序保护：两段定时限保护，投退受零序保护软硬压板和零序保护控制字控制。</p>
+            <p><strong>P23</strong> PT断线：零序Ⅲ段在 PT 断线后自动不带方向。</p>
+            <p><strong>P24</strong> 非全相运行：零序Ⅲ段动作时间比整定值缩短 0.5s，且自动不带方向。</p>
+            <p><strong>P24</strong> 动作结果：零序Ⅲ段动作后三跳并闭锁重合闸。</p>
+          </div>
+          <div className="manual-node-map">
+            <span>已映射到当前状态</span>
+            <p>投入={snapshot.stageEnabled ? 1 : 0}，启动={snapshot.stageStarted ? 1 : 0}，延时={snapshot.nodes.delay.value ? 1 : 0}，动作={snapshot.stageAction ? 1 : 0}</p>
+          </div>
+        </div>
+      ) : (
+        <p className="manual-empty">
+          {isZeroSequence
+            ? "上传说明书后，系统将提取原文定位，并同步生成保护状态与节点解释依据。"
+            : "当前先以案例一接入说明书解读模板，其他案例可按同一结构扩展。"}
+        </p>
+      )}
+    </section>
   );
 }
 
