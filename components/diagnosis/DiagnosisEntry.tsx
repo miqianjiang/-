@@ -7,33 +7,55 @@ import { useRouter } from "next/navigation";
 import { protectionCases } from "@/lib/protection-logic/cases";
 import type { ProtectionCase } from "@/lib/protection-logic/types";
 
+const matchingStages = [
+  { title: "识别故障现象", description: "提取关键词与保护现象" },
+  { title: "匹配保护类型", description: "定位对应保护逻辑案例" },
+  { title: "进入排查案例", description: "加载动态推演页面" }
+];
+
 const guidePrompts: Array<{ label: string; caseId: string }> = [
-  { label: "排查零序过流保护Ⅲ段故障", caseId: "zero-sequence-stage-three" },
-  { label: "排查距离Ⅱ段动作异常", caseId: "distance-stage-two" },
-  { label: "排查重合闸充电异常", caseId: "reclosing-logic" },
-  { label: "排查过流Ⅰ段启动异常", caseId: "over-current-stage-one" }
+  { label: "零序保护不动作", caseId: "zero-sequence-stage-three" },
+  { label: "距离Ⅱ段异常动作", caseId: "distance-stage-two" },
+  { label: "跳闸后未重合", caseId: "reclosing-logic" },
+  { label: "电流判据不满足", caseId: "over-current-stage-one" }
 ];
 
 const caseMeta = {
   zeroSequenceStageThree: {
     accent: "zero",
     tag: "案例一",
-    tone: "投入、启动、延时、动作"
+    icon: "⚡",
+    title: "零序保护Ⅲ段动作",
+    symptom: "线路单相接地短路",
+    criterion: "3I0 > I0.setⅢ 且 t > tⅢ",
+    applies: "保护不动作 / 零序电流不足 / 延时未到"
   },
   distanceStageTwo: {
     accent: "distance",
     tag: "案例二",
-    tone: "阻抗判据与 TV 复归"
+    icon: "⌁",
+    title: "距离保护Ⅱ段动作",
+    symptom: "相间短路超越Ⅰ段范围",
+    criterion: "Z < ZsetⅡ 且 t > tⅡ",
+    applies: "异常跳闸 / 阻抗判据不满足 / TV断线复归"
   },
   reclosingCharge: {
     accent: "reclose",
     tag: "案例三",
-    tone: "15s 充电与闭锁条件"
+    icon: "↻",
+    title: "综合重合闸逻辑",
+    symptom: "跳闸后重合闸充电或闭锁异常",
+    criterion: "无闭锁信号且满足充电条件",
+    applies: "跳闸后未重合 / 充电未完成 / 闭锁未解除"
   },
   overcurrentStageOne: {
     accent: "over",
     tag: "案例四",
-    tone: "方向、低压闭锁与电流判据"
+    icon: "I",
+    title: "过流Ⅰ段动作",
+    symptom: "近端严重相间短路",
+    criterion: "I > Iset，满足方向/低压闭锁条件",
+    applies: "速断未启动 / 方向闭锁 / 电流定值不满足"
   }
 };
 
@@ -92,8 +114,10 @@ export default function DiagnosisEntry() {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [isMatching, setIsMatching] = useState(false);
+  const [matchStage, setMatchStage] = useState(0);
   const [pendingCase, setPendingCase] = useState<ProtectionCase | null>(null);
   const matchTimer = useRef<number | null>(null);
+  const stageTimers = useRef<number[]>([]);
   const matchedCase = useMemo(() => matchCaseByQuery(query), [query]);
 
   useEffect(() => {
@@ -101,6 +125,7 @@ export default function DiagnosisEntry() {
       if (matchTimer.current) {
         window.clearTimeout(matchTimer.current);
       }
+      stageTimers.current.forEach((timer) => window.clearTimeout(timer));
     };
   }, []);
 
@@ -109,9 +134,16 @@ export default function DiagnosisEntry() {
     if (matchTimer.current) {
       window.clearTimeout(matchTimer.current);
     }
+    stageTimers.current.forEach((timer) => window.clearTimeout(timer));
+    stageTimers.current = [];
     setQuery(nextQuery);
     setPendingCase(nextCase);
+    setMatchStage(0);
     setIsMatching(true);
+    stageTimers.current = [
+      window.setTimeout(() => setMatchStage(1), 900),
+      window.setTimeout(() => setMatchStage(2), 1900)
+    ];
     matchTimer.current = window.setTimeout(() => {
       router.push(`/diagnosis/${nextCase.id}`);
     }, 3000);
@@ -124,48 +156,89 @@ export default function DiagnosisEntry() {
 
   return (
     <main className="app-shell diagnosis-entry-shell">
-      <header className="topbar diagnosis-entry-topbar">
-        <div className="brand-mark">继保</div>
-        <div>
-          <p className="eyebrow">功能3 · 故障排查智能引导</p>
-          <h1>故障排查智能引导</h1>
+      <header className="diagnosis-entry-nav">
+        <div className="diagnosis-nav-inner">
+          <Link className="diagnosis-nav-brand" href="/">
+            <span className="diagnosis-nav-mark">继保</span>
+            <span>
+              <small>线路保护理实一体化实训平台</small>
+              <strong>故障排查智能引导</strong>
+            </span>
+          </Link>
+          <div className="diagnosis-nav-actions">
+            <span className="diagnosis-case-count">已接入 {protectionCases.length} 个排查案例</span>
+            <Link className="diagnosis-nav-action" href="/">
+              返回功能入口
+            </Link>
+          </div>
         </div>
-        <Link className="topbar-link" href="/">
-          返回功能入口
-        </Link>
       </header>
 
       <section className="diagnosis-entry-main">
         <div className="diagnosis-chat-panel">
           <div className="assistant-card">
-            <span>AI 排查助手</span>
+            <div className="assistant-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false">
+                <circle cx="11" cy="11" r="6" />
+                <path d="m16 16 4 4" />
+              </svg>
+            </div>
+            <span>AI 诊断助手</span>
             <h2>说明你的故障现象</h2>
-            <p>输入故障现象、保护名称、判据或现场问题，我会识别对应案例，并进入故障排查页面。</p>
+            <p>输入故障现象，快速定位保护动作逻辑</p>
             <form className="chat-case-input" onSubmit={submitQuery}>
               <label className="sr-only" htmlFor="diagnosis-case-query">输入故障现象或问题</label>
               <div className="chat-input-shell">
+                <span className="search-symbol" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" focusable="false">
+                    <circle cx="11" cy="11" r="6" />
+                    <path d="m16 16 4 4" />
+                  </svg>
+                </span>
                 <input
                   id="diagnosis-case-query"
                   disabled={isMatching}
                   onChange={(event) => setQuery(event.target.value)}
-                  placeholder="例如：零序保护不动作、距离Ⅱ段异常、重合闸未充电、过流Ⅰ段未启动"
+                  placeholder="例如：保护压板已投入，但零序Ⅲ段没有动作"
                   value={query}
                 />
                 <button disabled={!matchedCase || isMatching} type="submit">
-                  {isMatching ? "匹配中" : "进入"}
+                  {isMatching ? "..." : "→"}
                 </button>
               </div>
               <div className={`match-inline-status ${isMatching ? "loading" : matchedCase ? "matched" : ""}`}>
                 {isMatching ? <span className="mini-spinner" aria-hidden="true" /> : null}
-                <p>
-                  {isMatching && pendingCase
-                    ? `AI 正在匹配：${pendingCase.shortTitle}，即将进入故障排查页面。`
-                    : query
-                      ? matchedCase
-                        ? `已匹配：${matchedCase.shortTitle}，按回车进入排查。`
-                        : "暂未匹配到案例，可尝试输入零序、距离、重合闸或过流。"
+                {(query || isMatching) ? (
+                  <div className="match-steps" aria-label="AI匹配进度">
+                    {matchingStages.map((stage, index) => {
+                      const statusClass = isMatching
+                        ? index < matchStage
+                          ? "done"
+                          : index === matchStage
+                            ? "active"
+                            : ""
+                        : matchedCase
+                          ? "done"
+                          : index === 0
+                            ? "active"
+                            : "";
+                      return (
+                        <span className={statusClass} key={stage.title}>
+                          <i>{index < matchStage || (!isMatching && matchedCase) ? "✓" : index + 1}</i>
+                          <b>{stage.title}</b>
+                          <em>{stage.description}</em>
+                        </span>
+                      );
+                    })}
+                  </div>
+                ) : null}
+                {!isMatching && !matchedCase ? (
+                  <p>
+                    {query
+                      ? "暂未匹配到案例，可尝试输入零序、距离、重合闸或过流。"
                       : "输入关键词后，系统会自动匹配对应案例。"}
-                </p>
+                  </p>
+                ) : null}
               </div>
             </form>
           </div>
@@ -192,23 +265,34 @@ export default function DiagnosisEntry() {
             <span>推荐案例</span>
             <strong>也可以直接选择</strong>
           </div>
-          {protectionCases.map((item, index) => {
+          {protectionCases.map((item) => {
             const meta = caseMeta[item.logicType];
             return (
               <Link className={`diagnosis-case-card ${meta.accent}`} href={`/diagnosis/${item.id}`} key={item.id}>
+                <div className="case-card-watermark" aria-hidden="true">{meta.icon}</div>
                 <div className="case-card-head">
-                  <div className="case-index">{String(index + 1).padStart(2, "0")}</div>
-                  <span>{meta.tag}</span>
+                  <div className="case-icon" aria-hidden="true">{meta.icon}</div>
+                  <h2>{meta.title}</h2>
                 </div>
                 <div>
-                  <span>{meta.tone}</span>
-                  <h2>{item.shortTitle}</h2>
+                  <p><strong>现象：</strong>{meta.symptom}</p>
+                  <p><strong>关键判据：</strong>{meta.criterion}</p>
+                  <p className="case-apply"><strong>适用：</strong>{meta.applies}</p>
                 </div>
+                <span className="case-detail-link">进入排查 →</span>
               </Link>
             );
           })}
         </div>
       </section>
+      <footer className="home-footer diagnosis-entry-footer">
+        <span>© 2026 线路保护智能训练平台</span>
+        <div>
+          <span>教学安全</span>
+          <span>故障排查</span>
+          <span>教师核验</span>
+        </div>
+      </footer>
     </main>
   );
 }

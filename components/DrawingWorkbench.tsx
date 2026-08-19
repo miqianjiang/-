@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, PointerEvent, useRef, useState } from "react";
+import { ChangeEvent, PointerEvent, WheelEvent, useRef, useState } from "react";
 import Link from "next/link";
 import ChaoxingDigitalHuman from "@/components/ChaoxingDigitalHuman";
 import type { PDFDocumentProxy } from "pdfjs-dist";
@@ -31,6 +31,7 @@ function normalizeSelection(start: Point, end: Point): Selection {
 
 export default function DrawingWorkbench() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const viewportRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const dragStartRef = useRef<Point | null>(null);
   const pdfRef = useRef<PDFDocumentProxy | null>(null);
@@ -45,6 +46,21 @@ export default function DrawingWorkbench() {
   const [analyzing, setAnalyzing] = useState(false);
   const [error, setError] = useState("");
   const [analysis, setAnalysis] = useState<DrawingAnalysis | null>(null);
+  const [zoom, setZoom] = useState(1);
+  const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
+
+  function fitCanvasToViewport(width: number, height: number) {
+    window.requestAnimationFrame(() => {
+      const viewport = viewportRef.current;
+      if (!viewport || !width || !height) return;
+      const availableWidth = Math.max(120, viewport.clientWidth - 28);
+      const availableHeight = Math.max(120, viewport.clientHeight - 28);
+      const nextZoom = Math.min(1, availableWidth / width, availableHeight / height);
+      setZoom(Math.max(0.2, Number(nextZoom.toFixed(2))));
+      viewport.scrollLeft = 0;
+      viewport.scrollTop = 0;
+    });
+  }
 
   async function renderPdfPage(pdf: PDFDocumentProxy, targetPage: number) {
     const page = await pdf.getPage(targetPage);
@@ -54,10 +70,12 @@ export default function DrawingWorkbench() {
 
     canvas.width = viewport.width;
     canvas.height = viewport.height;
+    setCanvasSize({ width: viewport.width, height: viewport.height });
     const context = canvas.getContext("2d");
     if (!context) throw new Error("浏览器无法创建绘图画布");
 
     await page.render({ canvas, canvasContext: context, viewport }).promise;
+    fitCanvasToViewport(viewport.width, viewport.height);
   }
 
   async function loadPdf(file: File, initialPage = 1) {
@@ -89,9 +107,11 @@ export default function DrawingWorkbench() {
       const scale = Math.min(1, maxDimension / Math.max(image.width, image.height));
       canvas.width = Math.round(image.width * scale);
       canvas.height = Math.round(image.height * scale);
+      setCanvasSize({ width: canvas.width, height: canvas.height });
       const context = canvas.getContext("2d");
       if (!context) throw new Error("浏览器无法创建绘图画布");
       context.drawImage(image, 0, 0, canvas.width, canvas.height);
+      fitCanvasToViewport(canvas.width, canvas.height);
     } finally {
       URL.revokeObjectURL(url);
     }
@@ -102,6 +122,7 @@ export default function DrawingWorkbench() {
     setAnalysis(null);
     setSelection(null);
     setDraftSelection(null);
+    setZoom(1);
 
     if (!ACCEPTED_TYPES.includes(file.type)) {
       setError("请选择 PDF、PNG、JPG 或 WEBP 文件。");
@@ -168,6 +189,35 @@ export default function DrawingWorkbench() {
       x: clamp((event.clientX - rect.left) / rect.width),
       y: clamp((event.clientY - rect.top) / rect.height)
     };
+  }
+
+  function updateZoom(nextZoom: number, origin?: { x: number; y: number }) {
+    const viewport = viewportRef.current;
+    const clampedZoom = Math.min(2.4, Math.max(0.2, Number(nextZoom.toFixed(2))));
+    if (!viewport) {
+      setZoom(clampedZoom);
+      return;
+    }
+
+    const rect = viewport.getBoundingClientRect();
+    const originX = origin ? origin.x - rect.left : viewport.clientWidth / 2;
+    const originY = origin ? origin.y - rect.top : viewport.clientHeight / 2;
+    const centerX = viewport.scrollLeft + originX;
+    const centerY = viewport.scrollTop + originY;
+    const ratio = clampedZoom / zoom;
+    setZoom(clampedZoom);
+
+    window.requestAnimationFrame(() => {
+      viewport.scrollLeft = centerX * ratio - originX;
+      viewport.scrollTop = centerY * ratio - originY;
+    });
+  }
+
+  function handleWheel(event: WheelEvent<HTMLDivElement>) {
+    if (!fileName) return;
+    event.preventDefault();
+    const step = event.deltaY > 0 ? -0.08 : 0.08;
+    updateZoom(zoom + step, { x: event.clientX, y: event.clientY });
   }
 
   function handlePointerDown(event: PointerEvent<HTMLDivElement>) {
@@ -392,7 +442,15 @@ export default function DrawingWorkbench() {
             <span>{fileName ? `第 ${pageNumber} 页` : "A3 / A4 均可"}</span>
           </div>
 
-          <div className="drawing-viewport">
+          <div className="drawing-viewport" onWheel={handleWheel} ref={viewportRef}>
+            {fileName && (
+              <div className="drawing-zoom-tools" aria-label="图纸缩放控制">
+                <button type="button" onClick={() => updateZoom(zoom - 0.15)}>−</button>
+                <strong>{Math.round(zoom * 100)}%</strong>
+                <button type="button" onClick={() => updateZoom(zoom + 0.15)}>＋</button>
+                <button type="button" onClick={() => fitCanvasToViewport(canvasSize.width, canvasSize.height)}>适应</button>
+              </div>
+            )}
             {!fileName && !loadingFile && (
               <div className="empty-state">
                 <div className="empty-drawing-icon">⌗</div>
@@ -402,18 +460,30 @@ export default function DrawingWorkbench() {
             )}
             {loadingFile && <div className="loading-state">正在解析文件…</div>}
             <div
-              ref={stageRef}
-              className={`canvas-stage ${fileName ? "visible" : ""}`}
-              onPointerDown={handlePointerDown}
-              onPointerMove={handlePointerMove}
-              onPointerUp={handlePointerUp}
-              onPointerCancel={() => {
-                dragStartRef.current = null;
-                setDraftSelection(null);
+              className={`canvas-zoom-shell ${fileName ? "visible" : ""}`}
+              style={{
+                width: canvasSize.width ? canvasSize.width * zoom : undefined,
+                height: canvasSize.height ? canvasSize.height * zoom : undefined
               }}
             >
-              <canvas ref={canvasRef} />
-              {visibleSelection && (
+              <div
+                ref={stageRef}
+                className="canvas-stage"
+                style={{
+                  width: canvasSize.width || undefined,
+                  height: canvasSize.height || undefined,
+                  transform: `scale(${zoom})`
+                }}
+                onPointerDown={handlePointerDown}
+                onPointerMove={handlePointerMove}
+                onPointerUp={handlePointerUp}
+                onPointerCancel={() => {
+                  dragStartRef.current = null;
+                  setDraftSelection(null);
+                }}
+              >
+                <canvas ref={canvasRef} />
+                {visibleSelection && (
                 <div
                   className="selection-box"
                   style={{
@@ -425,7 +495,8 @@ export default function DrawingWorkbench() {
                 >
                   <span>识别区域</span>
                 </div>
-              )}
+                )}
+              </div>
             </div>
           </div>
 

@@ -112,17 +112,6 @@ export default function DiagnosisTrainer({ initialCaseId = "zero-sequence-stage-
   const activeDelaySetting =
     experiment.logicType === "reclosingCharge" ? experiment.chargeDelaySetting : experiment.delaySetting;
   const flowStage = getFlowStage(experiment.testerOutputRunning, elapsed, snapshot.stageAction);
-  const protectionStatus = !isCaseAvailable
-    ? "待接入"
-    : snapshot.stageAction
-    ? "已动作"
-    : experiment.testerOutputRunning && snapshot.actionPermitted
-      ? "延时中"
-      : experiment.testerOutputRunning
-        ? "推演中"
-        : snapshot.actionPermitted
-          ? "待推演"
-          : "未动作";
 
   useEffect(() => {
     if (!experiment.testerOutputRunning) return;
@@ -270,18 +259,10 @@ export default function DiagnosisTrainer({ initialCaseId = "zero-sequence-stage-
       <header className="topbar">
         <div className="brand-mark">继保</div>
         <div>
-          <p className="eyebrow">根据故障现象定位保护逻辑节点并完成排查验证</p>
           <h1>故障排查智能引导</h1>
           <span className="logic-case-pill">{selectedCase.shortTitle}</span>
         </div>
-        <div className="logic-top-status">
-          <span>当前状态</span>
-          <strong>{protectionStatus}</strong>
-        </div>
         <div className="logic-top-actions">
-          <button className="topbar-link" type="button" onClick={resetAll}>
-            复位
-          </button>
           <Link className="topbar-link" href="/diagnosis">
             返回排查入口
           </Link>
@@ -305,7 +286,6 @@ export default function DiagnosisTrainer({ initialCaseId = "zero-sequence-stage-
           <section className="logic-canvas-panel">
             <div className="logic-panel-head">
               <div>
-                <span>动态逻辑图</span>
                 <h2>{selectedCase.title}</h2>
               </div>
               <div className="timer-readout">
