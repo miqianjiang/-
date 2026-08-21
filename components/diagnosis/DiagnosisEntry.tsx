@@ -161,7 +161,6 @@ export default function DiagnosisEntry() {
           <Link className="diagnosis-nav-brand" href="/">
             <span className="diagnosis-nav-mark">继保</span>
             <span>
-              <small>线路保护理实一体化实训平台</small>
               <strong>故障排查智能引导</strong>
             </span>
           </Link>

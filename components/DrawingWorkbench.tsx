@@ -2,7 +2,6 @@
 
 import { ChangeEvent, PointerEvent, WheelEvent, useRef, useState } from "react";
 import Link from "next/link";
-import ChaoxingDigitalHuman from "@/components/ChaoxingDigitalHuman";
 import type { PDFDocumentProxy } from "pdfjs-dist";
 import { drawingCases } from "@/lib/drawing-cases";
 import type { DrawingAnalysis, Selection } from "@/lib/types";
@@ -328,7 +327,6 @@ export default function DrawingWorkbench() {
       <header className="topbar">
         <div className="brand-mark">继保</div>
         <div>
-          <p className="eyebrow">线路保护理实一体化实训平台</p>
           <h1>保护屏柜图纸智能解读</h1>
         </div>
         <Link className="topbar-link" href="/">
@@ -615,7 +613,6 @@ export default function DrawingWorkbench() {
           本系统用于课程学习与仿真训练，AI 结果需由专业教师核验，不得作为真实继电保护操作依据。
         </span>
       </footer>
-      <ChaoxingDigitalHuman />
     </main>
   );
 }
